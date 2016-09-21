@@ -82,7 +82,7 @@ void Circuit::initializeDhParameters() {
 void Circuit::sendCreateCell(RSA *onionKey, CircuitConnectHandler handler) {
   boost::shared_ptr<CreateCell> create(new CreateCell(circuitId, dh, onionKey));
   connection.writeCell(*create, boost::bind(&Circuit::sendCreateCellComplete, this, 
-					     handler, create, placeholders::error));
+					     handler, create, _1));
 }
 
 void Circuit::sendCreateCellComplete(CircuitConnectHandler handler, 
@@ -100,7 +100,7 @@ void Circuit::sendCreateCellComplete(CircuitConnectHandler handler,
 void Circuit::readCreatedCell(CircuitConnectHandler handler) {
   boost::shared_ptr<CreatedCell> response(new CreatedCell(dh));
   connection.readCell(response, boost::bind(&Circuit::readCreatedCellComplete, this,
-					     handler, response, placeholders::error));
+					     handler, response, _1));
 }
 
 void Circuit::readCreatedCellComplete(CircuitConnectHandler handler, 
@@ -141,7 +141,7 @@ void Circuit::sendBeginCell(uint16_t streamId, std::string &address,
   cellEncrypter.encrypt(*beginCell);
   connection.writeCell(*beginCell, boost::bind(&Circuit::sendBeginCellComplete, this,
 						handler, streamId, beginCell, 
-						placeholders::error));
+						_1));
 }
 
 void Circuit::sendBeginCellComplete(CircuitConnectHandler handler, 
@@ -211,7 +211,7 @@ void Circuit::sendWindowUpdate(uint16_t streamId) {
   boost::shared_ptr<RelaySendMeCell> cell(new RelaySendMeCell(circuitId, streamId));
   cellEncrypter.encrypt(*cell);
   connection.writeCell(*cell, boost::bind(&Circuit::sendWindowUpdateComplete,
-					   this, cell, placeholders::error));
+					   this, cell, _1));
 }
 
 void Circuit::closeComplete(boost::shared_ptr<RelayEndCell> cell,
@@ -228,7 +228,7 @@ void Circuit::close(uint16_t streamId) {
   boost::shared_ptr<RelayEndCell> relayEnd(new RelayEndCell(circuitId, streamId));
   cellEncrypter.encrypt(*relayEnd);
   connection.writeCell(*relayEnd, boost::bind(&Circuit::closeComplete, this,
-					       relayEnd, placeholders::error));
+					       relayEnd, _1));
 }
 
 // Public
@@ -260,7 +260,7 @@ void Circuit::write(uint16_t streamId,
 								    length-i)));
 
     cellEncrypter.encrypt(*dataCell);
-    connection.writeCell(*dataCell, ((length-i <= MAX_PAYLOAD_LENGTH) ? handler : boost::bind(&Circuit::writeComplete, this, dataCell, placeholders::error)));
+    connection.writeCell(*dataCell, ((length-i <= MAX_PAYLOAD_LENGTH) ? handler : boost::bind(&Circuit::writeComplete, this, dataCell, _1)));
   }
 }
 

@@ -58,7 +58,7 @@ void Directory::getRandomServerListing(RetrieveServerListingHandler handler)
     if (count++ == index) {
       (*serverListingIterator)->getDescriptorList(boost::bind(&Directory::getServerListingComplete,
 							      this, *serverListingIterator, handler, 
-							      placeholders::error)); 
+							      _1)); 
       return;
     }
 
@@ -91,7 +91,7 @@ void Directory::getServerListingFor(std::string &server, RetrieveServerListingHa
   boost::shared_ptr<ServerListing> serverListing(new ServerListing(io_service, serverString));
   serverListing->getDescriptorList(boost::bind(&Directory::getServerListingComplete,
 					       this, serverListing, handler, 
-					       placeholders::error));
+					       _1));
 }
 
 void Directory::retrieveDirectoryListingComplete(DirectoryHandler handler, 
@@ -122,7 +122,7 @@ void Directory::retrieveDirectoryListing(DirectoryHandler handler) {
 
   Network::suckUrlToString(io_service, ip, 9031, request, &directoryList,
 			   boost::bind(&Directory::retrieveDirectoryListingComplete,
-				       this, handler, placeholders::error));
+				       this, handler, _1));
 }
  
 

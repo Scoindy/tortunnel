@@ -95,7 +95,7 @@ void TorScanner::tunnelStreamOpen(TorTunnel *tunnel,
   memcpy(buf, fullRequest.c_str(), fullRequest.size());
 
   stream->write(buf, fullRequest.size(), boost::bind(&TorScanner::requestSent, this,
-						     tunnel, stream, buf, placeholders::error));
+						     tunnel, stream, buf, _1));
 }
 
 void TorScanner::tunnelConnectionComplete(TorTunnel *tunnel, 
@@ -129,9 +129,9 @@ void TorScanner::serverDescriptorsComplete(boost::shared_ptr<ServerListingGroup>
   while ((exitNode = iterator.next()) != NULL) {
     TorTunnel *tunnel = new TorTunnel(io_service, exitNode, 
 				      boost::bind(&TorScanner::torTunnelError, this, 
-						  placeholders::error));
+						  _1));
     tunnel->connect(boost::bind(&TorScanner::tunnelConnectionComplete, this,
-				tunnel, placeholders::error));
+				tunnel, _1));
   }
 }
 			       
@@ -168,7 +168,7 @@ void TorScanner::directoryListingComplete(Directory *directory,
     boost::shared_ptr<ServerListingGroup> group(new ServerListingGroup(io_service, 
 								       identityList));
     group->retrieveGroupList(boost::bind(&TorScanner::serverDescriptorsComplete, this,
-					 group, placeholders::error));    
+					 group, _1));    
   }
 
   delete directory;
@@ -177,7 +177,7 @@ void TorScanner::directoryListingComplete(Directory *directory,
 void TorScanner::scan() {
   Directory *directory = new Directory(io_service);
   directory->retrieveDirectoryListing(boost::bind(&TorScanner::directoryListingComplete,
-						  this, directory, placeholders::error));
+						  this, directory, _1));
 }
 
 int main(int argc, char** argv) {

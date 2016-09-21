@@ -28,7 +28,6 @@
  */
 
 #include "TorProxy.h"
-
 using namespace boost::asio;
 
 TorProxy::TorProxy(TorTunnel *tunnel, io_service &io_service, int listenPort)
@@ -41,7 +40,7 @@ TorProxy::TorProxy(TorTunnel *tunnel, io_service &io_service, int listenPort)
 void TorProxy::acceptIncomingConnection() {
   boost::shared_ptr<ip::tcp::socket> socket(new ip::tcp::socket(acceptor.get_io_service()));
   acceptor.async_accept(*socket, boost::bind(&TorProxy::handleIncomingConnection,
-					     this, socket, placeholders::error));
+					     this, socket, _1));
 }
 
 void TorProxy::handleIncomingConnection(boost::shared_ptr<ip::tcp::socket> socket,
@@ -130,10 +129,10 @@ void getServerListingComplete(boost::asio::io_service &io_service,
 	    << ":" << serverListing->getPort() << std::endl;
   
   TorTunnel *nodeTunnel = new TorTunnel(io_service, serverListing, 
-					boost::bind(torTunnelError, placeholders::error));
+					boost::bind(torTunnelError, _1));
   nodeTunnel->connect(boost::bind(nodeConnectionComplete, nodeTunnel,
 				  boost::ref(io_service), arguments,
-				  placeholders::error));
+				  _1));
 }
 
 void getDirectoryListingComplete(boost::asio::io_service &io_service,
@@ -218,7 +217,7 @@ int main(int argc, char** argv) {
 						 boost::ref(io_service),
 						 boost::ref(directory),
 						 boost::ref(arguments),
-						 placeholders::error));  
+						 _1));  
 
   io_service::work work(io_service);
   io_service.run();

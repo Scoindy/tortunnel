@@ -46,7 +46,7 @@ void CellConsumer::consume() {
 
   boost::shared_ptr<Cell> cell(new Cell());
   connection.readCell(cell, boost::bind(&CellConsumer::readCellComplete, this,
-					cell, placeholders::error));
+					cell, _1));
 }
 
 void CellConsumer::readCellComplete( boost::shared_ptr<Cell> cell,

@@ -55,7 +55,7 @@ void Network::socketReadResponse(boost::shared_ptr<ip::tcp::socket> socket,
   socket->async_read_some(boost::asio::buffer(buf.get(), 1024),
 			  boost::bind(&Network::socketReadComplete,
 				      socket, buf, result, handler, 
-				      placeholders::error,
+				      _1,
 				      placeholders::bytes_transferred));
 }
 
@@ -88,7 +88,7 @@ void Network::sockConnected(boost::shared_ptr<ip::tcp::socket> socket,
 
   async_write(*socket, boost::asio::buffer(*request), 
 	      boost::bind(&Network::requestSent, socket, request, 
-			  result, handler, placeholders::error));
+			  result, handler, _1));
 }
 
 
@@ -102,5 +102,5 @@ void Network::suckUrlToString(boost::asio::io_service &io_service,
   boost::shared_ptr<ip::tcp::socket> socket(new ip::tcp::socket(io_service));
   ip::tcp::endpoint server(ip::address_v4::from_string(ip), port);
   socket->async_connect(server, boost::bind(&Network::sockConnected, socket, request, result, 
-					    handler, placeholders::error));
+					    handler, _1));
 }

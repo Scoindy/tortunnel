@@ -206,7 +206,7 @@ void SocksConnection::readIPv4AddressComplete(SocksRequestHandler handler,
 
   assert(transferred == IPV4_ADDRESS_LEN);
 
-  boost::array<unsigned char, 4> hostBytes = {data[0], data[1], data[2], data[3]};
+  boost::asio::ip::address_v4::bytes_type hostBytes = {data[0], data[1], data[2], data[3]};
   host                                     = ip::address_v4(hostBytes).to_string();
   port                                     = Util::bigEndianArrayToShort(data+4);
 
@@ -246,7 +246,7 @@ void SocksConnection::respondConnected(ip::tcp::endpoint local) {
   data[2] = 0x00;
   data[3] = 0x01;
 
-  boost::array< unsigned char, 4 > localAddress = local.address().to_v4().to_bytes();
+  boost::asio::ip::address_v4::bytes_type localAddress = local.address().to_v4().to_bytes();
   data[4] = localAddress[0];
   data[5] = localAddress[1];
   data[6] = localAddress[2];

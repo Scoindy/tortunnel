@@ -110,11 +110,11 @@ void Connection::readFully(unsigned char *buf, int len,
       break;	
     case SSL_ERROR_WANT_READ:
       readIntoBuffer(boost::bind(&Connection::readFully, this, buf, len, 
-				 handler, placeholders::error));
+				 handler, _1));
       return;
     case SSL_ERROR_WANT_WRITE:
       writeFromBuffer(boost::bind(&Connection::readFully, this, buf, len,
-				  handler, placeholders::error));
+				  handler, _1));
       return;
     default:
       socket.get_io_service().post(boost::bind(handler, boost::asio::error::bad_descriptor));
@@ -144,11 +144,11 @@ void Connection::writeFully(unsigned char *buf, int len, ConnectHandler handler,
       break;
     case SSL_ERROR_WANT_READ:
       readIntoBuffer(boost::bind(&Connection::writeFully, this, buf, len, 
-				 handler, placeholders::error));
+				 handler, _1));
       return;
     case SSL_ERROR_WANT_WRITE:
       writeFromBuffer(boost::bind(&Connection::readFully, this, buf, len,
-				  handler, placeholders::error));
+				  handler, _1));
       return;
     default:
       socket.get_io_service().post(boost::bind(handler, boost::asio::error::bad_descriptor));
@@ -156,14 +156,14 @@ void Connection::writeFully(unsigned char *buf, int len, ConnectHandler handler,
     }
   }
 
-  writeFromBuffer(boost::bind(&Connection::dummyWrite, this, placeholders::error));
+  writeFromBuffer(boost::bind(&Connection::dummyWrite, this, _1));
   socket.get_io_service().post(boost::bind(handler, err));
 }
 
 void Connection::initiateConnection(std::string &host, int port, ConnectHandler handler) {
   ip::tcp::endpoint endpoint(ip::address::from_string(host.c_str()), port);
   socket.async_connect(endpoint, boost::bind(&Connection::initiateConnectionComplete,
-					     this, handler, placeholders::error));
+					     this, handler, _1));
 }
 
 void Connection::initiateConnectionComplete(ConnectHandler handler, 
@@ -174,7 +174,7 @@ void Connection::initiateConnectionComplete(ConnectHandler handler,
     return;
   }
 
-  handshake(boost::bind(&Connection::renegotiateCiphers, this, handler, placeholders::error), 
+  handshake(boost::bind(&Connection::renegotiateCiphers, this, handler, _1), 
 	    err);
 }
 
@@ -189,7 +189,7 @@ void Connection::renegotiateCiphers(ConnectHandler handler,
   SSL_set_cipher_list(ssl, "DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DES-CBC3-SHA");
   SSL_renegotiate(ssl);
 
-  handshake(boost::bind(&Connection::exchangeVersions, this, handler, placeholders::error), err);
+  handshake(boost::bind(&Connection::exchangeVersions, this, handler, _1), err);
 }
 
 void Connection::handshake(ConnectHandler handler, const boost::system::error_code& err) {
@@ -201,17 +201,17 @@ void Connection::handshake(ConnectHandler handler, const boost::system::error_co
   int status = SSL_do_handshake(ssl);
   int res;
 
-  writeFromBuffer(boost::bind(&Connection::dummyWrite, this, placeholders::error));
+  writeFromBuffer(boost::bind(&Connection::dummyWrite, this, _1));
 
   switch ((res = SSL_get_error(ssl, status))) {
   case SSL_ERROR_NONE:
     socket.get_io_service().post(boost::bind(handler, boost::system::error_code()));
     break;
   case SSL_ERROR_WANT_READ:
-    readIntoBuffer(boost::bind(&Connection::handshake, this, handler, placeholders::error));
+    readIntoBuffer(boost::bind(&Connection::handshake, this, handler, _1));
     break;
   case SSL_ERROR_WANT_WRITE:
-    writeFromBuffer(boost::bind(&Connection::handshake, this, handler, placeholders::error));
+    writeFromBuffer(boost::bind(&Connection::handshake, this, handler, _1));
     break;
   default:
     socket.get_io_service().post(boost::bind(handler, boost::asio::error::bad_descriptor));
@@ -224,8 +224,8 @@ void Connection::dummyWrite(const boost::system::error_code &error) {}
 void Connection::readIntoBuffer(ConnectHandler handler) {
   socket.async_read_some(boost::asio::buffer(readBuffer, sizeof(readBuffer)),
 			 boost::bind(&Connection::readIntoBufferComplete,
-				     this, handler, placeholders::error, 
-				     placeholders::bytes_transferred));
+				     this, handler, _1, 
+				     boost::asio::placeholders::bytes_transferred));
 }
 
 void Connection::readIntoBufferComplete(ConnectHandler handler, 
@@ -250,10 +250,10 @@ void Connection::writeFromBuffer(ConnectHandler handler) {
     
     if (pending - bytesToSend == 0)
       async_write(socket, boost::asio::buffer(buf, bytesToSend), 
-		  boost::bind(handler, placeholders::error));
+		  boost::bind(handler, _1));
     else
       async_write(socket, boost::asio::buffer(buf, bytesToSend),
-		  boost::bind(&Connection::dummyWrite, this, placeholders::error));
+		  boost::bind(&Connection::dummyWrite, this, _1));
   }
 }
 
@@ -268,12 +268,12 @@ void Connection::exchangeVersions(ConnectHandler handler, const boost::system::e
   }
 
   writeFully(versionBytes, sizeof(versionBytes), 
-	     boost::bind(&Connection::dummyWrite, this, placeholders::error),
+	     boost::bind(&Connection::dummyWrite, this, _1),
 	     err);
 
   readFully(versionResponseHeader, 5,
 	    boost::bind(&Connection::sentVersionComplete, this, handler, 
-			versionResponseHeader, placeholders::error), err);
+			versionResponseHeader, _1), err);
 
 //   std::cout << "Version Response: " << std::endl;
 //   Util::hexDump(versionResponsePayload, length);
@@ -311,7 +311,7 @@ void Connection::sentVersionComplete(ConnectHandler handler,
 
   readFully(versionResponsePayload, length,
 	    boost::bind(&Connection::readVersionResponseComplete, 
-			this, handler, placeholders::error), 
+			this, handler, _1), 
 	    err);
 }
 
@@ -365,7 +365,7 @@ void Connection::exchangeNodeInfoSent(ConnectHandler handler,
   boost::shared_ptr<Cell> remoteNodeInfo(new Cell());
   readCell(remoteNodeInfo, boost::bind(&Connection::exchangeNodeInfoReceived,
 				       this, handler, remoteNodeInfo, 
-				       placeholders::error));
+				       _1));
 }
 
 void Connection::exchangeNodeInfo(ConnectHandler handler) {
@@ -384,7 +384,7 @@ void Connection::exchangeNodeInfo(ConnectHandler handler) {
   nodeInfo.append(thisHost, 4);            // This Address
   
   writeCell(nodeInfo, boost::bind(&Connection::exchangeNodeInfoSent, this, 
-				  handler, placeholders::error));
+				  handler, _1));
 }
 
 void Connection::close() {

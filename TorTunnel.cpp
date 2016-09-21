@@ -46,7 +46,7 @@ void TorTunnel::close() {
 
 void TorTunnel::connect(TunnelConnectHandler handler) {
   nodeConnection.connect(boost::bind(&TorTunnel::nodeConnectionComplete, 
-				     this, handler, placeholders::error));
+				     this, handler, _1));
 }
 
 void TorTunnel::nodeConnectionComplete(TunnelConnectHandler handler,
@@ -64,7 +64,7 @@ void TorTunnel::nodeConnectionComplete(TunnelConnectHandler handler,
   circuit            = boost::shared_ptr<Circuit>(new Circuit(nodeConnection, onionKey, 
 							      circuitId, this));
 
-  circuit->create(boost::bind(handler, placeholders::error));
+  circuit->create(boost::bind(handler, _1));
 }
 
 void TorTunnel::openStream(std::string &host, uint16_t port, TunnelStreamHandler handler) {
@@ -75,7 +75,7 @@ void TorTunnel::openStream(std::string &host, uint16_t port, TunnelStreamHandler
 
   circuit->connect(streamId, destination, boost::bind(&TorTunnel::openStreamComplete,
 						      this, handler, streamId,
-						      placeholders::error));
+						      _1));
 }
 
 void TorTunnel::openStreamComplete(TunnelStreamHandler handler, uint16_t streamId,

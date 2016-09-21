@@ -64,7 +64,7 @@ void ProxyShuffler::readComplete(boost::shared_ptr<ShuffleStream> thisStream,
 
   thatStream->write(thisBuffer, transferred,
 		    boost::bind(&ProxyShuffler::writeComplete, shared_from_this(),
-				thisStream, thatStream, thisBuffer, placeholders::error));
+				thisStream, thatStream, thisBuffer, _1));
 }
 
 void ProxyShuffler::writeComplete(boost::shared_ptr<ShuffleStream> thisStream,
